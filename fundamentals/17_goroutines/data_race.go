@@ -60,16 +60,14 @@ func GoRoutineFixedChannel() {
 	incr := make(chan int)
 	done := make(chan struct{})
 
-
 	go func() {
 		counter := 0
 		for v := range incr {
 			counter += v
 		}
-		fmt.Println(counter)
 		done <- struct{}{}
+		fmt.Println(counter)
 	}()
-
 
 	for range 1000 {
 		go func() {
@@ -81,5 +79,36 @@ func GoRoutineFixedChannel() {
 	time.Sleep(time.Second)
 	close(incr)
 	// <-done
+
+}
+
+func GoroutineStartSignalled(){
+	signal := make(chan any)
+	wg := &sync.WaitGroup{}
+
+	for i := range 5 {
+
+		// Adding goroutine to WaitGroup
+		wg.Add(1)
+
+		go func(){
+			// Making sure counter is decremented
+			defer wg.Done()
+
+			// Ensuring simultaneous start for all 5 goroutines. Nothing is execute below
+			// until the channel is closed
+			<-signal
+			fmt.Println("index", i)
+		}()
+
+		// wg.Go(func() {
+		// 	<-signal
+		// 	fmt.Println("index", i)
+		// })
+	}
+	
+	// Closing channel
+	close(signal)
+	wg.Wait()
 
 }

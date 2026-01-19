@@ -1,10 +1,9 @@
 package main
 
+import (
+)
 
 func main() {
-	
-	GoRoutineFixedChannel()
 
 
 }
-
