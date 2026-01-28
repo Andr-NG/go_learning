@@ -123,6 +123,11 @@ func produceJobs(s []Job, jobsc chan Job) {
 	close(jobsc)
 }
 
+func coordinator(res chan Result, wg *sync.WaitGroup) {
+	wg.Wait()
+	close(res)
+}
+
 func collectResults(res chan Result) []Result {
 	resArray := make([]Result, 0, len(res))
 
