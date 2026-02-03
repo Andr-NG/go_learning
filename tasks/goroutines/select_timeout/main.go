@@ -84,7 +84,7 @@ type Response struct {
 
 /*
 Main goroutine starts. It spawns 3 independant goroutines, and blocks at the main select while
-these 3 goroutines are doing their work. Each has their own instructions with teh select statement.
+these 3 goroutines are doing their work. Each has their own instructions with the select statement.
 go connectOne(ctx, output, d1) prints and moves to its select statement. It blocks. The select
 statement instructs if you get a call from the parent goroutine (main) <-ctx.Done(), then exist.
 If not, keep on for <-time.After(5 * time.Second) and do your job.
