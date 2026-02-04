@@ -57,12 +57,12 @@ func EnrichLogs(log ParsedLog, wg *sync.WaitGroup, output chan EnrichedLog) {
 		userTier = "free"
 	}
 
-	if log.Status >= 500 {
+	switch {
+	case log.Status >= 500:
 		severity = "error"
-	} else if log.Status >= 400 {
+	case log.Status >= 400: 
 		severity = "warning"
-
-	} else {
+	default: 
 		severity = "info"
 	}
 
