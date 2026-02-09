@@ -37,26 +37,31 @@ import (
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
+	var genwg sync.WaitGroup
 	cmdCh := make(chan command)
 
 	fmt.Println("Running storage. Collecting metrics...")
 	wg.Add(1)
 	go runStorage(&wg, ctx, cmdCh)
 
-	wg.Go(func() {
+	genwg.Go(func() {
 		generateCmd(ctx, cmdCh)
 	})
 
 	time.Sleep(time.Second * 30)
 	cancel()
+	// making sure generateCmd finishes first
+	genwg.Wait()
+	// making sure runStorage finishes after generateCmd
 	wg.Wait()
+	fmt.Println("Finishing running storage...")
 
 }
 
 
 /*
 Stores and mutates shared slice through commands sent via cmdCh by other goroutines.
-Eliminates mutex to provide clear ownership state
+Eliminates mutex to provide clear shared state ownership
 */
 func runStorage(wg *sync.WaitGroup, ctx context.Context, cmdCh chan command) {
 	defer wg.Done()
@@ -69,10 +74,12 @@ func runStorage(wg *sync.WaitGroup, ctx context.Context, cmdCh chan command) {
 			fmt.Printf("final flush of remaining %d metrics\n", len(items))
 			items = items[:0]
 			fmt.Printf("%d metrics after final flush\n", len(items))
-			fmt.Println("finishing running storage...")
 			return
 
 		case cmd := <-cmdCh:
+
+			// c := cmd.(type) means assigning a possible type to c
+			// so we can reach embedded fields
 			switch c := cmd.(type) {
 			case storeCmd:
 				items = append(items, c.value...)
@@ -104,11 +111,12 @@ func generateCmd(ctx context.Context, cmdCh chan command) {
 	defer flushTicker.Stop()
 
 	for {
-		randInt := rand.IntN(20)
+		randInt := rand.IntN(20)+1
 		select {
 		case <-ctx.Done():
-			fmt.Println("done sendning commands")
+			fmt.Println("done sending commands")
 			return
+
 		case <-flushTicker.C:
 			fmt.Println("sending flush cmd")
 			select {
@@ -120,7 +128,7 @@ func generateCmd(ctx context.Context, cmdCh chan command) {
 		case <-ticker.C:
 			fmt.Println("sending store cmd")
 			select {
-			case cmdCh <- storeCmd{value: make([]int, randInt, randInt)}:
+			case cmdCh <- storeCmd{value: make([]int, randInt)}:
 			case <-ctx.Done():
 				return
 			}
